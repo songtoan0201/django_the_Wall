@@ -13,11 +13,12 @@ def index(request):
 def register(request):
     # include some logic to validate user input before adding them to the database!
     if request.method == "POST":
+
         errors = Login.objects.basic_validator(request.POST)
         # see if the email provided exists in the database
-        all_email = Login.objects.all()
-        for single_email in all_email:
-            if single_email.email == request.POST["email"]:
+        all_users = Login.objects.all()
+        for user in all_users:
+            if user.email == request.POST["email"]:
                 errors["unique"] = "Email already existed in the database"
         if len(errors) > 0:
                 # if the errors dictionary contains anything, loop through each key-value pair and make a flash message
@@ -28,6 +29,7 @@ def register(request):
             print(errors)
             return redirect("/")
         else:
+
             print(request.POST)
             password = request.POST['password']
             pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
@@ -35,7 +37,7 @@ def register(request):
             logged_user = Login.objects.create(first_name=request.POST["first_name"], last_name=request.POST["last_name"],
                                                email=request.POST["email"], password=pw_hash, birthday=request.POST["birthday"])
             request.session['userid'] = logged_user.id
-            return redirect("/success")
+            return redirect("/wall")
     else:
         return redirect("/")
 
@@ -54,7 +56,7 @@ def login(request):
                 # if we get True after checking the password, we may put the user id in session
                 request.session['userid'] = logged_user.id
                 # never render on a post, always redirect!
-                return redirect('/success')
+                return redirect('/wall')
             else:
                 print("Password doesn't match")
                 return redirect("/")
@@ -73,7 +75,7 @@ def success(request):
         context = {
             "first_name": user.first_name,
         }
-        return render(request, "login/welcome.html", context)
+        return render(request, "Wall/Wall.html", context)
     else:
         return redirect("/")
 
@@ -86,3 +88,14 @@ def logout(request):
     #   if not key.startswith("_"): # skip keys set by the django system
     # del request.session[key]
     return redirect("/")
+
+
+def emailCheck(request):
+    found = False
+    data = {
+        'email': request.POST['email']
+    }
+    email_exist = Login.objects.filter(email=request.POST['email'])
+    if email_exist:
+        found = True
+    return render(request, "login/email.html", found=found)
